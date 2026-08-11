@@ -1,0 +1,32 @@
+node_modules/
+
+.generated/
+# Environment files
+.env
+
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+coverage/
+
+# Dependency directories
+prisma/migrations/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local AI / editor workspace folders
+.agents/
+.claude/
+.windsurf/
