@@ -19,6 +19,7 @@ coverage/
 
 # Dependency directories
 prisma/migrations/
+generated/
 
 # OS / editor files
 .DS_Store
