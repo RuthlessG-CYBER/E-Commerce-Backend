@@ -1,8 +1,8 @@
 # Backend Setup
 
-## Prerequisites
+Express + Prisma API with PostgreSQL, JWT auth, and Argon2 password hashing.
 
-Make sure these are installed on your system:
+## Prerequisites
 
 - Node.js
 - pnpm
@@ -10,26 +10,18 @@ Make sure these are installed on your system:
 
 ## Install Dependencies
 
-From the project root, run:
-
 ```bash
 pnpm install
 ```
 
 ## Environment Setup
 
-Create a `.env` file in the project root and add:
-
-```env
-DATABASE_URL=your_postgresql_connection_string
-PORT=5000
-```
-
-Example:
+Create a `.env` file in the project root:
 
 ```env
 DATABASE_URL=postgresql://postgres:password@localhost:5432/your_database
 PORT=5000
+JWT_SECRET=your_jwt_secret
 ```
 
 ## Prisma Setup
@@ -40,7 +32,7 @@ Generate the Prisma client:
 pnpm exec prisma generate
 ```
 
-If you need to apply database schema changes, run:
+Apply the schema to the database:
 
 ```bash
 pnpm exec prisma db push
@@ -48,43 +40,48 @@ pnpm exec prisma db push
 
 ## Run the Server
 
-Start the server with:
-
 ```bash
 pnpm run server
 ```
 
-Or run it directly with Node:
+The server starts at `http://localhost:5000` (or the `PORT` from `.env`).
 
-```bash
-node src/server.js
-```
-
-## Verify Startup
-
-If setup is correct, the server should start on:
+Health check:
 
 ```text
-http://localhost:5000
+GET /
 ```
 
-If you set a different `PORT` in `.env`, the server will use that port instead.
+## API Routes
 
-## API Base Route
+### User — `/api/v1/user`
 
-The user routes are available under:
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/register` | No | Create a user |
+| POST | `/login` | No | Login and get JWT |
+| GET | `/users` | Yes | List all users |
+| GET | `/users/:id` | Yes | Get user by ID |
+| PUT | `/users/:id` | Yes | Update user |
+| DELETE | `/users/:id` | Yes | Delete user |
+
+**Register body:** `username`, `email`, `password`
+
+**Login body:** `email`, `password`
+
+**Update body:** `username`, `email`, and optional `password`
+
+Protected routes expect:
 
 ```text
-/api/v1/user
+Authorization: Bearer <token>
 ```
 
-## Endpoints
+### Product — `/api/v1/product`
 
-```text
-POST   /api/v1/user/register
-GET    /api/v1/user/users
-GET    /api/v1/user/users/:id
-POST   /api/v1/user/login
-PUT    /api/v1/user/users/:id
-DELETE /api/v1/user/users/:id
-```
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/create-product` | No | Create a product |
+| DELETE | `/delete-product/:id` | No | Delete a product by ID |
+
+**Create body:** `name`, `slug`, `description`, `price`, `stock`
