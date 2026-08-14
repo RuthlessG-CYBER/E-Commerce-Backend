@@ -1,6 +1,6 @@
 # Backend Setup
 
-Express + Prisma API with PostgreSQL, JWT auth, and Argon2 password hashing.
+Express + Prisma API with PostgreSQL, JWT auth, Argon2 password hashing, and role-based access control (RBAC).
 
 ## Prerequisites
 
@@ -52,24 +52,13 @@ Health check:
 GET /
 ```
 
-## API Routes
+## Roles (RBAC)
 
-### User — `/api/v1/user`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/register` | No | Create a user |
-| POST | `/login` | No | Login and get JWT |
-| GET | `/users` | Yes | List all users |
-| GET | `/users/:id` | Yes | Get user by ID |
-| PUT | `/users/:id` | Yes | Update user |
-| DELETE | `/users/:id` | Yes | Delete user |
-
-**Register body:** `username`, `email`, `password`
-
-**Login body:** `email`, `password`
-
-**Update body:** `username`, `email`, and optional `password`
+| Role | Access |
+|------|--------|
+| `USER` | Default for new accounts. Can view own profile and update own user data. |
+| `ADMIN` | Create, update, and delete products; list and delete users. |
+| `SUPERADMIN` | Same as `ADMIN`. |
 
 Protected routes expect:
 
@@ -77,11 +66,52 @@ Protected routes expect:
 Authorization: Bearer <token>
 ```
 
+Promote a user (example):
+
+```sql
+UPDATE "User" SET role = 'ADMIN' WHERE email = 'you@example.com';
+```
+
+Or via API:
+
+```text
+PATCH /api/v1/user/users/:id/role
+Body: { "role": "ADMIN" }
+```
+
+Valid roles: `USER`, `ADMIN`, `SUPERADMIN`.
+
+## API Routes
+
+### User — `/api/v1/user`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/register` | No | Create a user (role defaults to `USER`) |
+| POST | `/login` | No | Login and get JWT |
+| GET | `/users` | Admin | List all users |
+| GET | `/users/:id` | Yes | Get user by ID |
+| PUT | `/users/:id` | Yes | Update user |
+| DELETE | `/users/:id` | Admin | Delete user |
+| PATCH | `/users/:id/role` | No | Update user role |
+
+**Register body:** `username`, `email`, `password`
+
+**Login body:** `email`, `password`
+
+**Update body:** `username`, `email`, and optional `password`
+
+**Role update body:** `role` (`USER` \| `ADMIN` \| `SUPERADMIN`)
+
 ### Product — `/api/v1/product`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/create-product` | No | Create a product |
-| DELETE | `/delete-product/:id` | No | Delete a product by ID |
+| GET | `/get-all-products` | No | List all products |
+| POST | `/create-product` | Admin | Create a product |
+| PATCH | `/update-product/:id` | Admin | Update a product |
+| DELETE | `/delete-product/:id` | Admin | Delete a product by ID |
 
-**Create body:** `name`, `slug`, `description`, `price`, `stock`
+**Create / update body:** `name`, `slug`, `description`, `price`, `stock`, `image`, and optional `category`
+
+Required on create: `name`, `description`, `price`, `stock`, `slug`, `image`

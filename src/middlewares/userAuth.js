@@ -29,3 +29,16 @@ export const authenticateUser = async (req, res, next) => {
     res.status(401).json({ message: "Unauthorized" });
   }
 };
+
+// RBAC: allow only the given roles (e.g. ADMIN, SUPERADMIN)
+export const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: insufficient permissions",
+      });
+    }
+    next();
+  };
+};

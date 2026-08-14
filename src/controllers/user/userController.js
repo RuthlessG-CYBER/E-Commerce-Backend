@@ -10,7 +10,11 @@ export const getAllUsers = async (req, res) => {
     const users = await prisma.user.findMany();
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to get users",
+      error: error.message,
+    });
   }
 };
 
@@ -24,7 +28,11 @@ export const getUserById = async (req, res) => {
     });
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to get user",
+      error: error.message,
+    });
   }
 };
 
@@ -39,7 +47,9 @@ export const createUser = async (req, res) => {
     });
 
     if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
     }
 
     const hashedPassword = await argon2.hash(password);
@@ -52,11 +62,17 @@ export const createUser = async (req, res) => {
       },
     });
 
-    res
-      .status(201)
-      .json({ message: "User created successfully", user: newUser });
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      user: newUser,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to create user",
+      error: error.message,
+    });
   }
 };
 
@@ -71,13 +87,17 @@ export const loginUser = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const isPasswordValid = await argon2.verify(user.passwordHash, password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid password" });
     }
 
     const token = jwt.sign(
@@ -90,9 +110,15 @@ export const loginUser = async (req, res) => {
       },
     );
 
-    res.status(200).json({ message: "Login successful", user, token });
+    res
+      .status(200)
+      .json({ success: true, message: "Login successful", user, token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to login",
+      error: error.message,
+    });
   }
 };
 
@@ -100,7 +126,7 @@ export const loginUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, password } = req.body;
+    const { username, email, password, bio, avatar } = req.body;
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -108,7 +134,9 @@ export const updateUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
+        success: false,
         message: "User not found",
+        error: error.message,
       });
     }
 
@@ -120,18 +148,21 @@ export const updateUser = async (req, res) => {
         passwordHash: password
           ? await argon2.hash(password)
           : user.passwordHash,
+        bio,
+        avatar,
       },
     });
 
     res.status(200).json({
+      success: true,
       message: "User updated successfully",
       user: updatedUser,
     });
   } catch (error) {
-    console.error(error);
-
     res.status(500).json({
-      message: "Internal server error",
+      success: false,
+      message: "Failed to update user",
+      error: error.message,
     });
   }
 };
@@ -143,12 +174,55 @@ export const deleteUser = async (req, res) => {
     const deletedUser = await prisma.user.delete({
       where: { id },
     });
-    res
-      .status(200)
-      .json({ message: "User deleted successfully", user: deletedUser });
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+      user: deletedUser,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete user",
+      error: error.message,
+    });
   }
 };
 
+// use patch to update user role
+export const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
 
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        error: error.message,
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        role,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "User role updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user role",
+      error: error.message,
+    });
+  }
+};
